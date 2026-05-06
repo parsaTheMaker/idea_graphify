@@ -268,7 +268,7 @@ async function loadGraph() {
                 springLength: 1,
                 springConstant: 0.01,
                 damping: 0.8,
-                avoidOverlap: 1
+                avoidOverlap: 0.5
             },
             maxVelocity: 30,
             minVelocity: 0.75,
