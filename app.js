@@ -304,7 +304,14 @@ async function loadGraph() {
             if (!box) return;
 
             const initial = (idea.name || "U").charAt(0).toUpperCase();
-            const bubbleColor = isDarkMode ? getDarkColorFromName(idea.name || "Unknown") : getColorFromName(idea.name || "Unknown");
+            
+            let hash = 0;
+            const nameStr = idea.name || "Unknown";
+            for (let i = 0; i < nameStr.length; i++) {
+                hash = nameStr.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash) % 360;
+            const bubbleColor = `hsl(${hue}, 75%, 45%)`;
             
             const radius = 12;
             const x = box.left; 
@@ -320,7 +327,7 @@ async function loadGraph() {
             ctx.stroke();
 
             ctx.font = "bold 12px Inter, sans-serif";
-            ctx.fillStyle = isDarkMode ? '#f9fafb' : '#111827';
+            ctx.fillStyle = '#ffffff';
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(initial, x, y + 1);
@@ -542,12 +549,20 @@ searchBtn.addEventListener('click', async () => {
         const output = await extractor(queryText, { pooling: 'mean', normalize: true });
         const searchVec = Array.from(output.data);
 
-        const updateNodes = [];
-        allIdeas.forEach(idea => {
-            const sim = cosineSimilarity(searchVec, idea.embedding);
-            // Hide nodes with low similarity to the query
-            updateNodes.push({ id: idea.id, hidden: sim < 0.25 });
-        });
+        const similarities = allIdeas.map(idea => ({
+            id: idea.id,
+            sim: cosineSimilarity(searchVec, idea.embedding)
+        }));
+        
+        // Use relative threshold because BGE similarities are distributed differently
+        const maxSim = Math.max(...similarities.map(s => s.sim));
+        
+        // Keep top results by filtering anything significantly worse than the best match
+        const updateNodes = similarities.map(s => ({
+            id: s.id,
+            hidden: s.sim < (maxSim * 0.85) // Show anything within 85% of the top match
+        }));
+        
         network.body.data.nodes.update(updateNodes);
     } catch (e) {
         console.error("Semantic search failed", e);
