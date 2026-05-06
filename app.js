@@ -42,6 +42,9 @@ const modalVotesDisplay = document.getElementById('modalVotesDisplay');
 const darkModeToggle = document.getElementById('darkModeToggle');
 const infoBtn = document.getElementById('infoBtn');
 
+const thresholdSlider = document.getElementById('thresholdSlider');
+const thresholdValue = document.getElementById('thresholdValue');
+
 const infoModal = document.getElementById('infoModal');
 const closeInfoBtn = document.getElementById('closeInfoBtn');
 const dismissInfoBtn = document.getElementById('dismissInfoBtn');
@@ -219,7 +222,8 @@ async function loadGraph() {
     }
 
     const avgSimilarity = pairCount > 0 ? (totalSimilarity / pairCount) : 0;
-    const connectionThreshold = avgSimilarity * 0.85; // Lowered threshold by 15%
+    const sliderMultiplier = parseInt(thresholdSlider.value) / 100;
+    const connectionThreshold = avgSimilarity * sliderMultiplier;
 
     // Connect if above threshold + Opacity/Width Scaling
     pairs.forEach(pair => {
@@ -725,5 +729,16 @@ darkModeToggle.addEventListener('click', () => {
             };
         });
         network.body.data.edges.update(edgeUpdates);
+    }
+});
+
+// Threshold Slider Logic
+thresholdSlider.addEventListener('input', (e) => {
+    thresholdValue.innerText = `${e.target.value}%`;
+});
+
+thresholdSlider.addEventListener('change', () => {
+    if (allIdeas.length > 0) {
+        loadGraph();
     }
 });
