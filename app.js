@@ -260,13 +260,16 @@ async function loadGraph() {
     const graphData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
     const options = { 
         physics: { 
-            solver: 'repulsion',
-            repulsion: {
-                nodeDistance: 250,
+            solver: 'barnesHut',
+            barnesHut: {
+                gravitationalConstant: -2000,
+                centralGravity: 0,
                 springLength: 200,
-                springConstant: 0.05
+                springConstant: 0.04,
+                damping: 0.09,
+                avoidOverlap: 1
             },
-            stabilization: { enabled: true, iterations: 200 }
+            stabilization: { enabled: true, iterations: 300 }
         },
         interaction: { hover: true, tooltipDelay: 200 }
     };
@@ -750,7 +753,52 @@ thresholdSlider.addEventListener('input', (e) => {
 });
 
 thresholdSlider.addEventListener('change', () => {
-    if (allIdeas.length > 0) {
+    if (allIdeas.length > 0 && network) {
+        let minSimilarity = Infinity;
+        let maxSimilarity = -Infinity;
+        let pairs = [];
+
+        for (let i = 0; i < allIdeas.length; i++) {
+            for (let j = i + 1; j < allIdeas.length; j++) {
+                const similarity = cosineSimilarity(allIdeas[i].embedding, allIdeas[j].embedding);
+                pairs.push({ from: allIdeas[i].id, to: allIdeas[j].id, similarity });
+                if (similarity < minSimilarity) minSimilarity = similarity;
+                if (similarity > maxSimilarity) maxSimilarity = similarity;
+            }
+        }
+
+        if (minSimilarity === Infinity) minSimilarity = 0;
+        if (maxSimilarity === -Infinity) maxSimilarity = 1;
+        if (minSimilarity === maxSimilarity) { minSimilarity = 0; maxSimilarity = 1; }
+
+        const sliderPercent = parseInt(thresholdSlider.value) / 100;
+        const connectionThreshold = minSimilarity + (maxSimilarity - minSimilarity) * sliderPercent;
+
+        const newEdges = [];
+        pairs.forEach(pair => {
+            if (pair.similarity > connectionThreshold) {
+                const edgeWeight = 1 + (pair.similarity - connectionThreshold) * 10;
+                const edgeOpacity = Math.min(1, 0.3 + (pair.similarity - connectionThreshold) * 2);
+                newEdges.push({ 
+                    from: pair.from, 
+                    to: pair.to, 
+                    color: { 
+                        color: isDarkMode ? `rgba(249, 250, 251, ${edgeOpacity})` : `rgba(28, 30, 33, ${edgeOpacity})`, 
+                        highlight: isDarkMode ? '#f9fafb' : '#111827' 
+                    },
+                    width: edgeWeight,
+                    smooth: { type: 'continuous' }
+                });
+            }
+        });
+
+        network.body.data.edges.clear();
+        network.body.data.edges.add(newEdges);
+        
+        network.setOptions({ physics: { enabled: true } });
+        network.stabilize(50);
+        setTimeout(() => network.setOptions({ physics: { enabled: false } }), 1000);
+    } else if (allIdeas.length > 0) {
         loadGraph();
     }
 });
