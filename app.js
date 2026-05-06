@@ -200,33 +200,27 @@ async function loadGraph() {
     allIdeas.forEach(idea => {
         const authorColor = isDarkMode ? getDarkColorFromName(idea.name || "Unknown") : getColorFromName(idea.name || "Unknown");
         const size = getNodeSize(idea.votes, idea.downvotes);
-        const initial = (idea.name || "U")[0].toUpperCase();
-        
         nodes.push({
             id: idea.id,
-            label: `<b>${initial}</b>  ${idea.title}`,
+            label: idea.title,
+            authorInitial: (idea.name || "?").charAt(0).toUpperCase(),
+            authorColor: authorColor,
             shape: 'box',
-            borderWidth: 3,
+            borderWidth: 2,
             color: {
-                background: isDarkMode ? '#1f2937' : '#ffffff',
-                border: authorColor,
-                highlight: { background: isDarkMode ? '#1f2937' : '#ffffff', border: authorColor },
-                hover: { background: isDarkMode ? '#374151' : '#f9fafb', border: authorColor }
+                background: authorColor,
+                border: '#e5e7eb',
+                highlight: { background: authorColor, border: '#111827' },
+                hover: { background: authorColor, border: '#9ca3af' }
             },
-            font: { 
-                multi: 'html',
-                color: isDarkMode ? '#f9fafb' : '#111827', 
-                face: 'Inter', 
-                size: size.font,
-                bold: { color: authorColor, size: size.font + 4 }
-            },
+            font: { color: isDarkMode ? '#f9fafb' : '#111827', face: 'Inter', size: size.font, multi: true },
             margin: size.margin,
             shadow: {
                 enabled: true,
-                color: 'rgba(0,0,0,0.15)',
-                size: 8,
+                color: 'rgba(0,0,0,0.08)',
+                size: 6,
                 x: 0,
-                y: 4
+                y: 3
             }
         });
     });
@@ -311,6 +305,34 @@ async function loadGraph() {
             const clickedNodeId = params.nodes[0];
             openViewModal(clickedNodeId);
         }
+    });
+
+    network.on("afterDrawing", function (ctx) {
+        const nodeIds = network.body.nodeIndices;
+        nodeIds.forEach(id => {
+            const node = network.body.nodes[id];
+            if (!node.options.authorInitial) return;
+
+            const pos = network.getPositions([id])[id];
+            const x = pos.x - node.shape.width / 2;
+            const y = pos.y - node.shape.height / 2;
+
+            // Bubble background
+            ctx.beginPath();
+            ctx.arc(x, y, 12, 0, 2 * Math.PI);
+            ctx.fillStyle = node.options.authorColor;
+            ctx.fill();
+            ctx.strokeStyle = isDarkMode ? '#1f2937' : '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Initial text
+            ctx.fillStyle = isDarkMode ? '#ffffff' : '#111827';
+            ctx.font = 'bold 12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.options.authorInitial, x, y);
+        });
     });
 }
 
