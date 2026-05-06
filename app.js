@@ -260,16 +260,16 @@ async function loadGraph() {
     const graphData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
     const options = { 
         physics: { 
-            solver: 'barnesHut',
-            barnesHut: {
-                gravitationalConstant: -2000,
+            solver: 'forceAtlas2Based',
+            forceAtlas2Based: {
+                gravitationalConstant: -1000,
                 centralGravity: 0,
-                springLength: 200,
-                springConstant: 0.04,
-                damping: 0.09,
+                springLength: 250,
+                springConstant: 0.03,
+                damping: 0.1,
                 avoidOverlap: 1
             },
-            stabilization: { enabled: true, iterations: 300 }
+            stabilization: { enabled: true, iterations: 1000 }
         },
         interaction: { hover: true, tooltipDelay: 200 }
     };
@@ -796,8 +796,8 @@ thresholdSlider.addEventListener('change', () => {
         network.body.data.edges.add(newEdges);
         
         network.setOptions({ physics: { enabled: true } });
-        network.stabilize(50);
-        setTimeout(() => network.setOptions({ physics: { enabled: false } }), 1000);
+        network.stabilize(500);
+        setTimeout(() => network.setOptions({ physics: { enabled: false } }), 2000);
     } else if (allIdeas.length > 0) {
         loadGraph();
     }
