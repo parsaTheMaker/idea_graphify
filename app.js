@@ -268,7 +268,7 @@ async function loadGraph() {
                 springLength: 10,
                 springConstant: 0.02,
                 damping: 0.8,
-                avoidOverlap: 0.1
+                avoidOverlap: 0.4
             },
             maxVelocity: 5,
             minVelocity: 0.2,
@@ -281,7 +281,7 @@ async function loadGraph() {
     network = new vis.Network(container, graphData, options);
 
     network.on("stabilizationIterationsDone", function () {
-        network.fit({ padding: 50, animation: { duration: 800 } });
+        network.fit({ padding: 5, animation: { duration: 800 } });
     });
 
     network.on("click", function (params) {
