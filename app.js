@@ -222,8 +222,7 @@ async function loadGraph() {
     }
 
     const avgSimilarity = pairCount > 0 ? (totalSimilarity / pairCount) : 0;
-    const sliderMultiplier = parseInt(thresholdSlider.value) / 100;
-    const connectionThreshold = avgSimilarity * sliderMultiplier;
+    const connectionThreshold = parseInt(thresholdSlider.value) / 100;
 
     // Connect if above threshold + Opacity/Width Scaling
     pairs.forEach(pair => {
