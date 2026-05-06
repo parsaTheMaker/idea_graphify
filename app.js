@@ -128,6 +128,21 @@ function getNodeSize(votes, downvotes) {
     };
 }
 
+// Global Extractor instance to prevent reloading
+let extractorInstance = null;
+async function getExtractor() {
+    if (!extractorInstance) {
+        // bge-small-en-v1.5 is extremely efficient (~33MB quantized) and highly accurate
+        extractorInstance = await pipeline('feature-extraction', 'Xenova/bge-small-en-v1.5');
+    }
+    return extractorInstance;
+}
+
+// Standardized formatting for better semantic understanding
+function formatIdeaText(title, desc, tags) {
+    return `Represent this brainstorming idea for retrieval: Title: ${title}; Description: ${desc}; Keywords: ${tags}`;
+}
+
 // Handle Form Submission
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -142,8 +157,8 @@ form.addEventListener('submit', async (e) => {
     statusMsg.innerText = "Analyzing idea concept...";
 
     try {
-        const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-        const textToEmbed = title + ". " + desc + ". " + tags;
+        const extractor = await getExtractor();
+        const textToEmbed = formatIdeaText(title, desc, tags);
         const output = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
         const embeddingArray = Array.from(output.data);
 
@@ -429,8 +444,8 @@ saveEditBtn.addEventListener('click', async () => {
     msg.innerText = "Re-analyzing idea...";
 
     try {
-        const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-        const textToEmbed = title + ". " + desc + ". " + tags;
+        const extractor = await getExtractor();
+        const textToEmbed = formatIdeaText(title, desc, tags);
         const output = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
         const embeddingArray = Array.from(output.data);
 
@@ -488,8 +503,10 @@ searchBtn.addEventListener('click', async () => {
     searchBtn.disabled = true;
 
     try {
-        const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-        const output = await extractor(term, { pooling: 'mean', normalize: true });
+        const extractor = await getExtractor();
+        // For search, we use a slightly different prefix as per BGE best practices
+        const queryText = `Represent this query for retrieving relevant brainstorming ideas: ${term}`;
+        const output = await extractor(queryText, { pooling: 'mean', normalize: true });
         const searchVec = Array.from(output.data);
 
         const updateNodes = [];
