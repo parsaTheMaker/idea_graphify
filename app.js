@@ -219,13 +219,14 @@ async function loadGraph() {
     }
 
     const avgSimilarity = pairCount > 0 ? (totalSimilarity / pairCount) : 0;
+    const connectionThreshold = avgSimilarity * 0.85; // Lowered threshold by 15%
 
-    // Connect if above average + Opacity/Width Scaling
+    // Connect if above threshold + Opacity/Width Scaling
     pairs.forEach(pair => {
-        if (pair.similarity > avgSimilarity) {
-            // Scale thickness from 1 to 5 based on similarity distance past average
-            const edgeWeight = 1 + (pair.similarity - avgSimilarity) * 10;
-            const edgeOpacity = Math.min(1, 0.3 + (pair.similarity - avgSimilarity) * 2);
+        if (pair.similarity > connectionThreshold) {
+            // Scale thickness from 1 to 5 based on similarity distance past threshold
+            const edgeWeight = 1 + (pair.similarity - connectionThreshold) * 10;
+            const edgeOpacity = Math.min(1, 0.3 + (pair.similarity - connectionThreshold) * 2);
             edges.push({ 
                 from: pair.from, 
                 to: pair.to, 
