@@ -200,25 +200,33 @@ async function loadGraph() {
     allIdeas.forEach(idea => {
         const authorColor = isDarkMode ? getDarkColorFromName(idea.name || "Unknown") : getColorFromName(idea.name || "Unknown");
         const size = getNodeSize(idea.votes, idea.downvotes);
+        const initial = (idea.name || "U")[0].toUpperCase();
+        
         nodes.push({
             id: idea.id,
-            label: idea.title,
+            label: `<b>${initial}</b>  ${idea.title}`,
             shape: 'box',
-            borderWidth: 2,
+            borderWidth: 3,
             color: {
-                background: authorColor,
-                border: '#e5e7eb',
-                highlight: { background: authorColor, border: '#111827' },
-                hover: { background: authorColor, border: '#9ca3af' }
+                background: isDarkMode ? '#1f2937' : '#ffffff',
+                border: authorColor,
+                highlight: { background: isDarkMode ? '#1f2937' : '#ffffff', border: authorColor },
+                hover: { background: isDarkMode ? '#374151' : '#f9fafb', border: authorColor }
             },
-            font: { color: isDarkMode ? '#f9fafb' : '#111827', face: 'Inter', size: size.font, multi: true },
+            font: { 
+                multi: 'html',
+                color: isDarkMode ? '#f9fafb' : '#111827', 
+                face: 'Inter', 
+                size: size.font,
+                bold: { color: authorColor, size: size.font + 4 }
+            },
             margin: size.margin,
             shadow: {
                 enabled: true,
-                color: 'rgba(0,0,0,0.08)',
-                size: 6,
+                color: 'rgba(0,0,0,0.15)',
+                size: 8,
                 x: 0,
-                y: 3
+                y: 4
             }
         });
     });
