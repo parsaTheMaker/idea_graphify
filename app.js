@@ -260,13 +260,14 @@ async function loadGraph() {
     const graphData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
     const options = { 
         physics: { 
+            enabled: true,
             solver: 'forceAtlas2Based',
             forceAtlas2Based: {
-                gravitationalConstant: -1000,
+                gravitationalConstant: -50,
                 centralGravity: 0,
-                springLength: 250,
-                springConstant: 0.03,
-                damping: 0.1,
+                springLength: 300,
+                springConstant: 0.05,
+                damping: 0.15,
                 avoidOverlap: 1
             },
             stabilization: { enabled: true, iterations: 1000 }
@@ -278,7 +279,6 @@ async function loadGraph() {
     network = new vis.Network(container, graphData, options);
 
     network.on("stabilizationIterationsDone", function () {
-        network.setOptions({ physics: { enabled: false } });
         network.fit({ padding: 50, animation: { duration: 800 } });
     });
 
@@ -797,7 +797,6 @@ thresholdSlider.addEventListener('change', () => {
         
         network.setOptions({ physics: { enabled: true } });
         network.stabilize(500);
-        setTimeout(() => network.setOptions({ physics: { enabled: false } }), 2000);
     } else if (allIdeas.length > 0) {
         loadGraph();
     }
