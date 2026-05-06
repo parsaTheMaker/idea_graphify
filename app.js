@@ -2,8 +2,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';
 
 // Setup Supabase
-const supabaseUrl = 'https://kmmbimiqkfqsxpqcovun.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttbWJpbWlxa2Zxc3hwcWNvdnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NTY3NDAsImV4cCI6MjA5MjUzMjc0MH0.nuTAxNkBT42u9IB2RxYXPxXa27UnLpBwMV8A-RwF4BM';
+const supabaseUrl = 'https://mctwspivjdwldotykzay.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jdHdzcGl2amR3bGRvdHlremF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNjYxNjUsImV4cCI6MjA5MzY0MjE2NX0.b_AyeXoZDRQ_BqYeSRs391FUtr09zqrYxRCVIfx1mDo';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // DOM Elements
