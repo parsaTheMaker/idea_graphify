@@ -533,7 +533,6 @@ searchBtn.addEventListener('click', async () => {
     const term = searchInput.value.trim();
 
     if (!term) {
-        // Reset hiding
         const updateNodes = allIdeas.map(idea => ({ id: idea.id, hidden: false }));
         network.body.data.nodes.update(updateNodes);
         return;
@@ -544,32 +543,42 @@ searchBtn.addEventListener('click', async () => {
 
     try {
         const extractor = await getExtractor();
-        // For search, we use a slightly different prefix as per BGE best practices
         const queryText = `Represent this query for retrieving relevant brainstorming ideas: ${term}`;
         const output = await extractor(queryText, { pooling: 'mean', normalize: true });
         const searchVec = Array.from(output.data);
+        console.log(`[Search] Query vector length: ${searchVec.length}`);
 
-        const similarities = allIdeas.map(idea => ({
+        // Validate embeddings exist and are real arrays
+        const ideasWithEmbeddings = allIdeas.filter(idea => Array.isArray(idea.embedding) && idea.embedding.length > 0);
+        console.log(`[Search] Ideas with valid embeddings: ${ideasWithEmbeddings.length} / ${allIdeas.length}`);
+
+        if (ideasWithEmbeddings.length === 0) {
+            alert("No ideas have embeddings yet. Please re-add your ideas to regenerate them.");
+            return;
+        }
+
+        const similarities = ideasWithEmbeddings.map(idea => ({
             id: idea.id,
             sim: cosineSimilarity(searchVec, idea.embedding)
         }));
-        
-        // Sort descending by similarity
+
         similarities.sort((a, b) => b.sim - a.sim);
-        
-        // BGE vectors are highly clustered. Instead of thresholds, just keep the Top N results.
-        // We'll show the top 3 ideas, or top 15% if the graph is very large.
-        const topN = Math.max(3, Math.ceil(allIdeas.length * 0.15));
+        console.log(`[Search] Top similarities:`, similarities.slice(0, 5).map(s => `${s.id}: ${s.sim.toFixed(4)}`));
+
+        const topN = Math.max(3, Math.ceil(ideasWithEmbeddings.length * 0.15));
         const thresholdSim = similarities[Math.min(topN - 1, similarities.length - 1)].sim;
-        
-        const updateNodes = similarities.map(s => ({
-            id: s.id,
-            hidden: s.sim < thresholdSim
+        console.log(`[Search] topN=${topN}, threshold=${thresholdSim.toFixed(4)}`);
+
+        // Hide anything below threshold, including ideas without embeddings
+        const visibleIds = new Set(similarities.filter(s => s.sim >= thresholdSim).map(s => s.id));
+        const updateNodes = allIdeas.map(idea => ({
+            id: idea.id,
+            hidden: !visibleIds.has(idea.id)
         }));
-        
+
         network.body.data.nodes.update(updateNodes);
     } catch (e) {
-        console.error("Semantic search failed", e);
+        console.error("[Search] Semantic search failed:", e);
     }
 
     searchBtn.innerText = "🔍";
