@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainstorming Graph</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- SVG Icons directly injected so we don't need external libraries, or just minimal use -->
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="overlay">
+        <div class="login-card">
+            <h2>Team Access</h2>
+            <p>Please enter the passphrase to view the board.</p>
+            <div class="input-container">
+                <input type="password" id="teamPassword" placeholder="Passphrase" required>
+            </div>
+            <button id="loginBtn" class="btn primary-btn">Enter Workspace</button>
+            <p id="loginError" class="error-msg"></p>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="appContainer" class="hidden app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2>Brainstorming</h2>
+                    <p>Submit a new concept</p>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <!-- Info Toggle -->
+                    <button id="infoBtn" class="btn secondary-btn" style="padding: 0.5rem; font-size: 1.2rem;" title="How to use">ℹ️</button>
+                    <!-- Dark Mode Toggle -->
+                    <button id="darkModeToggle" class="btn secondary-btn" style="padding: 0.5rem; font-size: 1.2rem;">🌙</button>
+                </div>
+            </div>
+
+
+            
+            <form id="ideaForm" class="idea-form">
+                <div class="form-group">
+                    <label for="authorName">Your Name</label>
+                    <input type="text" id="authorName" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="ideaTitle">Idea Title</label>
+                    <input type="text" id="ideaTitle" placeholder="e.g. consultancy for import of cars" required>
+                </div>
+                <div class="form-group">
+                    <label for="ideaDesc">Description</label>
+                    <textarea id="ideaDesc" rows="5" placeholder="Explain how it works..." required></textarea>
+                </div>
+                <!-- 2. Categories / Tags -->
+                <div class="form-group">
+                    <label for="ideaTags">Category Tags</label>
+                    <input type="text" id="ideaTags" placeholder="e.g. marketing, design">
+                </div>
+                <button type="submit" id="submitBtn" class="btn primary-btn btn-block">Add to Graph</button>
+            </form>
+            <div id="statusMsg" class="status-msg"></div>
+
+            <hr class="sidebar-divider">
+
+            <!-- Export Buttons -->
+            <button id="exportJsonBtn" class="btn secondary-btn btn-block" style="margin-bottom: 0.5rem;">Download Database (JSON)</button>
+            <button id="exportCsvBtn" class="btn secondary-btn btn-block" style="margin-bottom: 0.5rem;">Download Database (CSV)</button>
+            <button id="exportBtn" class="btn secondary-btn btn-block">Download Graph (PNG)</button>
+        </aside>
+
+        <main class="main-content">
+            <!-- Top Floating Search -->
+            <div class="floating-search">
+                <span class="search-icon-deco">✨</span>
+                <input type="text" id="searchInput" placeholder="Explore the network...">
+                <button id="searchBtn" class="search-action-btn">🔍</button>
+            </div>
+
+            <!-- 4. Canvas Controls -->
+            <div class="canvas-controls">
+                <button id="gatherBtn" class="btn control-btn" title="Gather Nodes" style="font-weight: bold; font-family: monospace;">&gt;&lt;</button>
+                <button id="zoomInBtn" class="btn control-btn" title="Zoom In">+</button>
+                <button id="zoomOutBtn" class="btn control-btn" title="Zoom Out">-</button>
+                <button id="fitViewBtn" class="btn control-btn" title="Fit to Screen">[ ]</button>
+            </div>
+            
+            <div id="mynetwork"></div>
+        </main>
+    </div>
+
+    <!-- Detail / Edit Modal -->
+    <div id="ideaModal" class="modal hidden">
+        <div class="modal-card">
+            <button class="close-btn" aria-label="Close" id="closeModalBtn">&times;</button>
+
+            <!-- View Mode -->
+            <div id="modalViewMode">
+                <div style="margin-bottom: 0.75rem; display: flex; align-items: baseline; gap: 0.5rem;">
+                    <strong style="color: var(--text-secondary);">Idea:</strong> 
+                    <h3 id="modalTitle" style="margin: 0; font-size: 1.25rem;">Title</h3>
+                </div>
+                
+                <div style="margin-bottom: 0.75rem; display: flex; align-items: baseline; gap: 0.5rem;">
+                    <strong style="color: var(--text-secondary);">Creator:</strong> 
+                    <span class="badge" id="modalAuthor" style="margin-bottom: 0;">Name</span>
+                </div>
+                
+                <div style="margin-bottom: 1.25rem; display: flex; align-items: baseline; gap: 0.5rem;">
+                    <strong style="color: var(--text-secondary);">Tags:</strong> 
+                    <span class="badge" id="modalTagsDisplay" style="background:var(--primary-color);color:#fff;margin-bottom: 0;">Tags</span>
+                </div>
+
+                <div class="modal-body">
+                    <strong style="color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Description:</strong>
+                    <p id="modalDesc">Description goes here...</p>
+                </div>
+                
+                <div class="votes-section" style="margin-bottom: 1rem;">
+                    <strong style="color: var(--text-secondary); margin-right: 0.5rem;">Score:</strong>
+                    <span id="modalVotesDisplay">0 Votes</span>
+                </div>
+
+                <!-- 3. Comments Section -->
+                <div class="comments-section" style="margin-top: 1rem;">
+                    <h4>Discussion</h4>
+                    <div id="commentsList" style="max-height: 100px; overflow-y: auto; background: #f9fafb; padding: 0.5rem; border-radius: 6px; font-size: 0.85rem; border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                        <!-- Comments injected here -->
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="newCommenterName" placeholder="Your Name" style="width: 80px; padding: 0.5rem; font-size:0.85rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <input type="text" id="newCommentInput" placeholder="Add a comment..." style="flex:1; padding: 0.5rem; font-size:0.85rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <button id="addCommentBtn" class="btn primary-btn" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;">Post</button>
+                    </div>
+                </div>
+
+                <div class="modal-actions modal-footer" style="align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <!-- Upvote/Downvote -->
+                    <button id="modalUpvoteBtn" class="btn" style="background-color: #22c55e; border-color: #16a34a; color: white; font-size: 1.25rem; padding: 0.5rem 1rem;" title="Upvote">👍</button>
+                    <button id="modalDownvoteBtn" class="btn" style="background-color: #ef4444; border-color: #dc2626; color: white; font-size: 1.25rem; padding: 0.5rem 1rem;" title="Downvote">👎</button>
+                    <div style="flex:1;"></div>
+                    <button id="modalEditBtn" class="btn secondary-btn">Edit</button>
+                    <button id="modalDeleteBtn" class="btn danger-btn">Delete</button>
+                </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <div id="modalEditMode" class="hidden">
+                <h3>Edit Idea</h3>
+                <input type="hidden" id="editIdeaId">
+                <div class="form-group">
+                    <label for="editAuthorName">Name</label>
+                    <input type="text" id="editAuthorName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editIdeaTitle">Title</label>
+                    <input type="text" id="editIdeaTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="editIdeaDesc">Description</label>
+                    <textarea id="editIdeaDesc" rows="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editIdeaTags">Category Tags</label>
+                    <input type="text" id="editIdeaTags">
+                </div>
+
+                <div id="editStatusMsg" class="status-msg"></div>
+
+                <div class="modal-actions modal-footer">
+                    <button id="saveEditBtn" class="btn primary-btn">Save Changes</button>
+                    <button id="cancelEditBtn" class="btn secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right-click Context Menu has been removed as per cleaner UI requirements -->
+
+    <!-- Info / Invite Modal -->
+    <div id="infoModal" class="modal hidden">
+        <div class="modal-card">
+            <button class="close-btn" aria-label="Close" id="closeInfoBtn">&times;</button>
+            <h3>Welcome to the Brainstorming Network 🧠</h3>
+            <div class="modal-body" style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; text-align: left;">
+                <p>This platform uses an embedded AI model to build an interconnected web of our team's concepts.</p>
+                <br>
+                <strong>How to use it:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><strong>Submit:</strong> Add your concept via the sidebar.</li>
+                    <li><strong>AI Connections:</strong> The engine reads your text and automatically connects it to other nodes that share semantic similarity.</li>
+                    <li><strong>Vote & Discuss:</strong> Click any idea to Upvote it (which makes it visually grow) or add Comments.</li>
+                    <li><strong>Navigate:</strong> The graph will automatically organize and lock into place. Use the <code>&gt;&lt;</code> button to manually gather scattered nodes!</li>
+                </ul>
+            </div>
+            <div class="modal-actions modal-footer">
+                <button id="dismissInfoBtn" class="btn primary-btn btn-block">Got it, let's go!</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
