@@ -212,17 +212,30 @@ async function loadGraph() {
     let pairCount = 0;
     let pairs = [];
 
+    let minSimilarity = Infinity;
+    let maxSimilarity = -Infinity;
+
     for (let i = 0; i < allIdeas.length; i++) {
         for (let j = i + 1; j < allIdeas.length; j++) {
             const similarity = cosineSimilarity(allIdeas[i].embedding, allIdeas[j].embedding);
             pairs.push({ from: allIdeas[i].id, to: allIdeas[j].id, similarity });
             totalSimilarity += similarity;
+            if (similarity < minSimilarity) minSimilarity = similarity;
+            if (similarity > maxSimilarity) maxSimilarity = similarity;
             pairCount++;
         }
     }
 
+    if (minSimilarity === Infinity) minSimilarity = 0;
+    if (maxSimilarity === -Infinity) maxSimilarity = 1;
+    if (minSimilarity === maxSimilarity) {
+        minSimilarity = 0; 
+        maxSimilarity = 1;
+    }
+
     const avgSimilarity = pairCount > 0 ? (totalSimilarity / pairCount) : 0;
-    const connectionThreshold = parseInt(thresholdSlider.value) / 100;
+    const sliderPercent = parseInt(thresholdSlider.value) / 100;
+    const connectionThreshold = minSimilarity + (maxSimilarity - minSimilarity) * sliderPercent;
 
     // Connect if above threshold + Opacity/Width Scaling
     pairs.forEach(pair => {
