@@ -554,13 +554,17 @@ searchBtn.addEventListener('click', async () => {
             sim: cosineSimilarity(searchVec, idea.embedding)
         }));
         
-        // Use relative threshold because BGE similarities are distributed differently
-        const maxSim = Math.max(...similarities.map(s => s.sim));
+        // Sort descending by similarity
+        similarities.sort((a, b) => b.sim - a.sim);
         
-        // Keep top results by filtering anything significantly worse than the best match
+        // BGE vectors are highly clustered. Instead of thresholds, just keep the Top N results.
+        // We'll show the top 3 ideas, or top 15% if the graph is very large.
+        const topN = Math.max(3, Math.ceil(allIdeas.length * 0.15));
+        const thresholdSim = similarities[Math.min(topN - 1, similarities.length - 1)].sim;
+        
         const updateNodes = similarities.map(s => ({
             id: s.id,
-            hidden: s.sim < (maxSim * 0.85) // Show anything within 85% of the top match
+            hidden: s.sim < thresholdSim
         }));
         
         network.body.data.nodes.update(updateNodes);
