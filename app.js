@@ -53,18 +53,18 @@ const addCommentBtn = document.getElementById('addCommentBtn');
 const newCommentInput = document.getElementById('newCommentInput');
 const commentsList = document.getElementById('commentsList');
 
-let allIdeas = []; 
+let allIdeas = [];
 let network = null;
-let currentViewedNodeId = null; 
+let currentViewedNodeId = null;
 
 // --- LOGIN LOGIC ---
 loginBtn.addEventListener('click', async () => {
     const pwd = document.getElementById('teamPassword').value;
     loginBtn.disabled = true;
     loginBtn.innerText = "Checking...";
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'team@mybrainstorm.com', 
+        email: 'team@mybrainstorm.com',
         password: pwd
     });
 
@@ -107,7 +107,7 @@ function getColorFromName(name) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 80%, 85%)`; 
+    return `hsl(${hue}, 80%, 85%)`;
 }
 
 function getDarkColorFromName(name) {
@@ -116,7 +116,7 @@ function getDarkColorFromName(name) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash) % 360;
-    return `hsl(${hue}, 60%, 25%)`; 
+    return `hsl(${hue}, 60%, 25%)`;
 }
 
 // Node Size Calculator
@@ -133,7 +133,7 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
     submitBtn.innerText = "Processing...";
-    
+
     const name = document.getElementById('authorName').value;
     const title = document.getElementById('ideaTitle').value;
     const desc = document.getElementById('ideaDesc').value;
@@ -157,7 +157,7 @@ form.addEventListener('submit', async (e) => {
 
         statusMsg.innerText = "Successfully added!";
         form.reset();
-        loadGraph(); 
+        loadGraph();
 
     } catch (err) {
         console.error(err);
@@ -176,7 +176,7 @@ async function loadGraph() {
         console.error("Failed to load ideas:", error);
         return;
     }
-    
+
     allIdeas = data;
     const nodes = [];
     const edges = [];
@@ -185,9 +185,9 @@ async function loadGraph() {
     allIdeas.forEach(idea => {
         const authorColor = isDarkMode ? getDarkColorFromName(idea.name || "Unknown") : getColorFromName(idea.name || "Unknown");
         const size = getNodeSize(idea.votes, idea.downvotes);
-        nodes.push({ 
-            id: idea.id, 
-            label: idea.title, 
+        nodes.push({
+            id: idea.id,
+            label: idea.title,
             shape: 'box',
             borderWidth: 2,
             color: {
@@ -229,7 +229,7 @@ async function loadGraph() {
     if (minSimilarity === Infinity) minSimilarity = 0;
     if (maxSimilarity === -Infinity) maxSimilarity = 1;
     if (minSimilarity === maxSimilarity) {
-        minSimilarity = 0; 
+        minSimilarity = 0;
         maxSimilarity = 1;
     }
 
@@ -243,12 +243,12 @@ async function loadGraph() {
             // Scale thickness from 1 to 5 based on similarity distance past threshold
             const edgeWeight = 1 + (pair.similarity - connectionThreshold) * 10;
             const edgeOpacity = Math.min(1, 0.3 + (pair.similarity - connectionThreshold) * 2);
-            edges.push({ 
-                from: pair.from, 
-                to: pair.to, 
-                color: { 
-                    color: isDarkMode ? `rgba(249, 250, 251, ${edgeOpacity})` : `rgba(28, 30, 33, ${edgeOpacity})`, 
-                    highlight: isDarkMode ? '#f9fafb' : '#111827' 
+            edges.push({
+                from: pair.from,
+                to: pair.to,
+                color: {
+                    color: isDarkMode ? `rgba(249, 250, 251, ${edgeOpacity})` : `rgba(28, 30, 33, ${edgeOpacity})`,
+                    highlight: isDarkMode ? '#f9fafb' : '#111827'
                 },
                 width: edgeWeight,
                 smooth: { type: 'continuous' }
@@ -258,15 +258,15 @@ async function loadGraph() {
 
     const container = document.getElementById('mynetwork');
     const graphData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-    const options = { 
-        physics: { 
+    const options = {
+        physics: {
             enabled: true,
             solver: 'forceAtlas2Based',
             forceAtlas2Based: {
-                gravitationalConstant: -20,
+                gravitationalConstant: -10,
                 centralGravity: 0,
-                springLength: 300,
-                springConstant: 0.02,
+                springLength: 50,
+                springConstant: 0.03,
                 damping: 0.4,
                 avoidOverlap: 1
             },
@@ -276,7 +276,7 @@ async function loadGraph() {
         },
         interaction: { hover: true, tooltipDelay: 200 }
     };
-    
+
     if (network) network.destroy();
     network = new vis.Network(container, graphData, options);
 
@@ -306,7 +306,7 @@ function renderComments(idea) {
         div.style.paddingBottom = '0.25rem';
         div.style.display = 'flex';
         div.style.justifyContent = 'space-between';
-        
+
         div.innerHTML = `<div><strong>${c.user}</strong>: ${c.text}</div>
                          <button class="delete-comment-btn" data-id="${c.id || c.text}" style="background:none; border:none; color: var(--danger-color); cursor:pointer;" title="Delete Comment">🗑️</button>`;
         commentsList.appendChild(div);
@@ -318,13 +318,13 @@ function renderComments(idea) {
             const commentIdToDelete = e.currentTarget.getAttribute('data-id');
             // Fallback for old comments without ID
             const newCommentList = idea.comments.filter(c => (c.id || c.text) !== commentIdToDelete);
-            
+
             idea.comments = newCommentList;
             renderComments(idea);
-            
+
             try {
                 await supabase.from('ideas').update({ comments: newCommentList }).eq('id', idea.id);
-            } catch(err) { console.error(err); }
+            } catch (err) { console.error(err); }
         });
     });
 }
@@ -341,12 +341,12 @@ function openViewModal(nodeId) {
     document.getElementById('modalTitle').innerText = idea.title;
     document.getElementById('modalAuthor').innerText = idea.name;
     document.getElementById('modalDesc').innerText = idea.description;
-    
+
     document.getElementById('modalTagsDisplay').innerText = idea.tags || 'No Tags';
-    
+
     const score = (idea.votes || 0) - (idea.downvotes || 0);
     modalVotesDisplay.innerText = `${score >= 0 ? '+' : ''}${score} Votes`;
-    
+
     renderComments(idea);
 
     document.getElementById('editStatusMsg').innerText = "";
@@ -385,7 +385,7 @@ addCommentBtn.addEventListener('click', async () => {
         idea.comments = newCommentList;
         newCommentInput.value = '';
         renderComments(idea);
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
     addCommentBtn.innerText = 'Post';
 });
 
@@ -398,7 +398,7 @@ modalDeleteBtn.addEventListener('click', async () => {
         modalDeleteBtn.disabled = true;
 
         const { error } = await supabase.from('ideas').delete().eq('id', currentViewedNodeId);
-        
+
         modalDeleteBtn.innerText = oldText;
         modalDeleteBtn.disabled = false;
 
@@ -418,7 +418,7 @@ modalEditBtn.addEventListener('click', openEditMode);
 // Save Edit
 saveEditBtn.addEventListener('click', async () => {
     const msg = document.getElementById('editStatusMsg');
-    
+
     const id = document.getElementById('editIdeaId').value;
     const name = document.getElementById('editAuthorName').value;
     const title = document.getElementById('editIdeaTitle').value;
@@ -469,15 +469,15 @@ cancelEditBtn.addEventListener('click', () => {
 });
 
 closeBtn.onclick = () => modal.classList.add('hidden');
-window.onclick = (e) => { 
-    if (e.target === modal) modal.classList.add('hidden'); 
+window.onclick = (e) => {
+    if (e.target === modal) modal.classList.add('hidden');
 };
 
 // Search Filter (Semantic!)
 searchBtn.addEventListener('click', async () => {
     if (!network) return;
     const term = searchInput.value.trim();
-    
+
     if (!term) {
         // Reset hiding
         const updateNodes = allIdeas.map(idea => ({ id: idea.id, hidden: false }));
@@ -497,13 +497,13 @@ searchBtn.addEventListener('click', async () => {
         allIdeas.forEach(idea => {
             const sim = cosineSimilarity(searchVec, idea.embedding);
             // Hide nodes with low similarity to the query
-            updateNodes.push({ id: idea.id, hidden: sim < 0.25 }); 
+            updateNodes.push({ id: idea.id, hidden: sim < 0.25 });
         });
         network.body.data.nodes.update(updateNodes);
-    } catch(e) {
+    } catch (e) {
         console.error("Semantic search failed", e);
     }
-    
+
     searchBtn.innerText = "🔍";
     searchBtn.disabled = false;
 });
@@ -572,25 +572,25 @@ exportJsonBtn.addEventListener('click', () => {
 
         const jsonString = JSON.stringify(cleanIdeas, null, 2);
         console.log("JSON stringified successfully. Length:", jsonString.length);
-        
+
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        
+
         const link = document.createElement("a");
         link.style.display = 'none';
         link.href = url;
         link.download = "Brainstorming_Database.json";
-        
+
         document.body.appendChild(link);
         console.log("Firing JSON click...");
         link.click();
-        
+
         setTimeout(() => {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             console.log("JSON cleanup finished.");
         }, 1000);
-        
+
     } catch (err) {
         console.error("JSON Export Error:", err);
         alert("Failed to export JSON: " + err.message);
@@ -607,7 +607,7 @@ exportCsvBtn.addEventListener('click', () => {
         }
 
         const headers = ['ID', 'Creator Name', 'Idea Title', 'Description', 'Tags', 'Upvotes', 'Downvotes', 'Net Score', 'Comments Count'];
-        
+
         const escapeCsv = (str) => {
             if (str == null) return '""';
             return `"${String(str).replace(/"/g, '""')}"`;
@@ -620,7 +620,7 @@ exportCsvBtn.addEventListener('click', () => {
             if (Array.isArray(idea.comments)) {
                 commentsCount = idea.comments.length;
             } else if (typeof idea.comments === 'string') {
-                try { commentsCount = JSON.parse(idea.comments).length; } catch(e) {}
+                try { commentsCount = JSON.parse(idea.comments).length; } catch (e) { }
             }
 
             const row = [
@@ -639,27 +639,27 @@ exportCsvBtn.addEventListener('click', () => {
 
         const csvString = csvRows.join('\n');
         console.log("CSV String generated successfully. Length:", csvString.length);
-        
+
         // Use Blob for proper file handling
         const blob = new Blob(['\uFEFF', csvString], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        
+
         const link = document.createElement("a");
         link.style.display = 'none';
         link.href = url;
         link.download = "Brainstorming_Database.csv";
-        
+
         document.body.appendChild(link);
         console.log("Firing click...");
         link.click();
-        
+
         // Clean up safely
         setTimeout(() => {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             console.log("Cleanup finished.");
         }, 1000);
-        
+
     } catch (err) {
         console.error("CSV Export Error:", err);
         alert("Failed to export: " + err.message);
@@ -670,20 +670,20 @@ exportCsvBtn.addEventListener('click', () => {
 async function castVote(isUpvote) {
     if (!currentViewedNodeId) return;
     const idea = allIdeas.find(i => i.id === currentViewedNodeId);
-    
+
     let newUp = idea.votes || 0;
     let newDown = idea.downvotes || 0;
-    
+
     if (isUpvote) newUp += 1;
     else newDown += 1;
-    
+
     const updatePayload = { votes: newUp, downvotes: newDown };
-    
+
     modalUpvoteBtn.disabled = true;
     modalDownvoteBtn.disabled = true;
 
     const { error } = await supabase.from('ideas').update(updatePayload).eq('id', currentViewedNodeId);
-    
+
     modalUpvoteBtn.disabled = false;
     modalDownvoteBtn.disabled = false;
 
@@ -692,11 +692,11 @@ async function castVote(isUpvote) {
         idea.downvotes = newDown;
         const score = newUp - newDown;
         modalVotesDisplay.innerText = `${score >= 0 ? '+' : ''}${score} Votes`;
-        
+
         if (network) {
             const size = getNodeSize(newUp, newDown);
-            network.body.data.nodes.update([{ 
-                id: currentViewedNodeId, 
+            network.body.data.nodes.update([{
+                id: currentViewedNodeId,
                 font: { size: size.font },
                 margin: size.margin
             }]);
@@ -781,12 +781,12 @@ thresholdSlider.addEventListener('change', () => {
             if (pair.similarity > connectionThreshold) {
                 const edgeWeight = 1 + (pair.similarity - connectionThreshold) * 10;
                 const edgeOpacity = Math.min(1, 0.3 + (pair.similarity - connectionThreshold) * 2);
-                newEdges.push({ 
-                    from: pair.from, 
-                    to: pair.to, 
-                    color: { 
-                        color: isDarkMode ? `rgba(249, 250, 251, ${edgeOpacity})` : `rgba(28, 30, 33, ${edgeOpacity})`, 
-                        highlight: isDarkMode ? '#f9fafb' : '#111827' 
+                newEdges.push({
+                    from: pair.from,
+                    to: pair.to,
+                    color: {
+                        color: isDarkMode ? `rgba(249, 250, 251, ${edgeOpacity})` : `rgba(28, 30, 33, ${edgeOpacity})`,
+                        highlight: isDarkMode ? '#f9fafb' : '#111827'
                     },
                     width: edgeWeight,
                     smooth: { type: 'continuous' }
@@ -796,7 +796,7 @@ thresholdSlider.addEventListener('change', () => {
 
         network.body.data.edges.clear();
         network.body.data.edges.add(newEdges);
-        
+
         network.setOptions({ physics: { enabled: true } });
         network.stabilize(500);
     } else if (allIdeas.length > 0) {
