@@ -263,12 +263,14 @@ async function loadGraph() {
             enabled: true,
             solver: 'repulsion',
             repulsion: {
-                nodeDistance: 150,
+                nodeDistance: 120,
                 centralGravity: 0,
-                springLength: 200,
-                springConstant: 0.05,
-                damping: 0.09
+                springLength: 150,
+                springConstant: 0.01,
+                damping: 0.4
             },
+            maxVelocity: 20,
+            minVelocity: 0.5,
             stabilization: { enabled: true, iterations: 1000 }
         },
         interaction: { hover: true, tooltipDelay: 200 }
