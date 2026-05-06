@@ -265,13 +265,13 @@ async function loadGraph() {
             forceAtlas2Based: {
                 gravitationalConstant: -5,
                 centralGravity: 0,
-                springLength: 1,
-                springConstant: 0.01,
+                springLength: 10,
+                springConstant: 0.02,
                 damping: 0.8,
-                avoidOverlap: 0.5
+                avoidOverlap: 0.1
             },
-            maxVelocity: 30,
-            minVelocity: 0.75,
+            maxVelocity: 5,
+            minVelocity: 0.2,
             stabilization: { enabled: true, iterations: 1000 }
         },
         interaction: { hover: true, tooltipDelay: 200 }
